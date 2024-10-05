@@ -1,16 +1,25 @@
 #include "window.hpp"
 #include "log.hpp"
+#include <memory>
 #include <stdexcept>
+#include <vulkan/vulkan_structs.hpp>
 
 class App : public Window {
 public:
     App() : Window("Window Example", {}) {
-        initVulkan({}, true);
+        Validation::enableValidationLayers = true;
+        
+        initVulkan({});
+        device = requestDevice(vk::PhysicalDeviceFeatures());
+        LOG_INFO("Chosen physical device {}", device->v_physical_device.getProperties(v_dispatcher).deviceName.data());
     }
 
     void loop(double delta) {
-
+        
     }
+
+private:
+    std::unique_ptr<Device> device;
 };
 
 int main(void) {

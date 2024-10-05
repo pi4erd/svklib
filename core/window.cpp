@@ -1,6 +1,7 @@
 #include "window.hpp"
 
 #include <GLFW/glfw3.h>
+#include <memory>
 #include <stdexcept>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_core.h>
@@ -9,6 +10,7 @@
 #include <vulkan/vulkan_structs.hpp>
 
 #include "log.hpp"
+#include "validation.hpp"
 
 Window::Window(std::string title, const std::vector<std::tuple<int, int>> &hints) : title(title)
 {
@@ -62,7 +64,7 @@ Window::~Window()
     glfwTerminate();
 }
 
-void Window::initVulkan(std::vector<const char*> requestedExtensions, bool enableValidationLayers) {
+void Window::initVulkan(std::vector<const char*> requestedExtensions) {
     auto appinfo = vk::ApplicationInfo()
         .setPApplicationName(title.c_str())
         .setApplicationVersion(vk::makeApiVersion(0, 0, 1, 0))
@@ -74,7 +76,7 @@ void Window::initVulkan(std::vector<const char*> requestedExtensions, bool enabl
         "VK_LAYER_KHRONOS_validation"
     };
 
-    if(enableValidationLayers) {
+    if(Validation::enableValidationLayers) {
         requestedExtensions.push_back(vk::EXTDebugUtilsExtensionName);
     }
 
@@ -82,7 +84,7 @@ void Window::initVulkan(std::vector<const char*> requestedExtensions, bool enabl
         .setPApplicationInfo(&appinfo)
         .setPEnabledExtensionNames(requestedExtensions);
     
-    if(enableValidationLayers) {
+    if(Validation::enableValidationLayers) {
         instanceInfo = instanceInfo.setPEnabledLayerNames(enabledLayers);
     } else {
         instanceInfo = instanceInfo.setEnabledLayerCount(0);
@@ -95,7 +97,7 @@ void Window::initVulkan(std::vector<const char*> requestedExtensions, bool enabl
 
     LOG_DEBUG("Initialized Vulkan instance.");
 
-    if(enableValidationLayers) {
+    if(Validation::enableValidationLayers) {
         auto messengerInfo = vk::DebugUtilsMessengerCreateInfoEXT()
             .setMessageSeverity(
                 vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
@@ -119,4 +121,8 @@ void Window::initVulkan(std::vector<const char*> requestedExtensions, bool enabl
         reinterpret_cast<VkSurfaceKHR*>(&v_surface)
     );
     LOG_DEBUG("Created VkSurfaceKHR.");
+}
+
+std::unique_ptr<Device> Window::requestDevice(const vk::PhysicalDeviceFeatures &requestedFeatures) {
+    return std::make_unique<Device>(v_instance, vk::PhysicalDeviceFeatures(), v_dispatcher);
 }

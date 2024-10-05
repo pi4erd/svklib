@@ -1,5 +1,8 @@
 #pragma once
 
+#include "vkdevice.hpp"
+
+#include <memory>
 #include <vulkan/vk_platform.h>
 #include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
@@ -16,7 +19,8 @@ public:
     Window(std::string title, const std::vector<std::tuple<int, int>> &hints);
     virtual ~Window();
 
-    void initVulkan(std::vector<const char*> requestedExtensions, bool enableValidationLayers=false);
+    void initVulkan(std::vector<const char*> requestedExtensions);
+    std::unique_ptr<Device> requestDevice(const vk::PhysicalDeviceFeatures &requestedFeatures);
 
     bool shouldClose(void) { return glfwWindowShouldClose(window); }
     void close(void) { glfwSetWindowShouldClose(window, true); }
