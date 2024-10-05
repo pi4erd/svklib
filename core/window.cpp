@@ -55,6 +55,8 @@ Window::~Window()
 {
     LOG_DEBUG("Stopping GLFW.");
 
+    v_instance.destroySurfaceKHR(v_surface, nullptr, v_dispatcher);
+
     v_instance.destroyDebugUtilsMessengerEXT(v_messenger, nullptr, v_dispatcher);
     LOG_DEBUG("Destroyed Vulkan debug messenger.");
     v_instance.destroy(nullptr, v_dispatcher);
@@ -78,6 +80,14 @@ void Window::initVulkan(std::vector<const char*> requestedExtensions) {
 
     if(Validation::enableValidationLayers) {
         requestedExtensions.push_back(vk::EXTDebugUtilsExtensionName);
+    }
+
+    uint32_t glfwExtensionCount;
+
+    const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+    for(uint32_t i = 0; i < glfwExtensionCount; i++) {
+        requestedExtensions.push_back(glfwExtensions[i]);
     }
 
     auto instanceInfo = vk::InstanceCreateInfo()
@@ -114,15 +124,27 @@ void Window::initVulkan(std::vector<const char*> requestedExtensions) {
         LOG_DEBUG("Initialized Vulkan debug messenger.");
     }
 
-    glfwCreateWindowSurface(
+    if(glfwCreateWindowSurface(
         static_cast<VkInstance>(v_instance),
         window,
         nullptr,
         reinterpret_cast<VkSurfaceKHR*>(&v_surface)
-    );
+    ) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create window surface!");
+    }
+
     LOG_DEBUG("Created VkSurfaceKHR.");
 }
 
-std::unique_ptr<Device> Window::requestDevice(const vk::PhysicalDeviceFeatures &requestedFeatures) {
-    return std::make_unique<Device>(v_instance, vk::PhysicalDeviceFeatures(), v_dispatcher);
+std::unique_ptr<Device> Window::requestDevice(
+    const vk::PhysicalDeviceFeatures &requestedFeatures,
+    const std::vector<const char*> &requestedExtensions
+) {
+    return std::make_unique<Device>(
+        v_instance,
+        v_surface,
+        vk::PhysicalDeviceFeatures(),
+        requestedExtensions,
+        v_dispatcher
+    );
 }

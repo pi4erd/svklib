@@ -1,6 +1,8 @@
 #pragma once
 
 #include "validation.hpp"
+#include <optional>
+#include <set>
 #include <stdexcept>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_enums.hpp>
@@ -9,25 +11,41 @@
 
 struct QueueFamilyIndices {
     uint32_t graphics;
+    uint32_t present;
 
-    QueueFamilyIndices(vk::PhysicalDevice &device, vk::DispatchLoaderDynamic &v_dispatcher) {
-        vk::Optional<uint32_t> graphicsFamily = nullptr;
+    QueueFamilyIndices(vk::PhysicalDevice &device, vk::SurfaceKHR &surface, vk::DispatchLoaderDynamic &v_dispatcher) {
+        std::optional<uint32_t> graphicsFamily;
+        std::optional<uint32_t> presentFamily;
 
         auto properties = device.getQueueFamilyProperties(v_dispatcher);
 
+        vk::Bool32 presentSupport = vk::False;
+
         for(uint32_t i = 0; i < properties.size(); i++) {
             auto &family = properties[i];
-            if(family.queueFlags & vk::QueueFlagBits::eGraphics) {
+            if(!graphicsFamily.has_value() && family.queueFlags & vk::QueueFlagBits::eGraphics) {
                 graphicsFamily = i;
-                break;
             }
+
+            presentSupport = device.getSurfaceSupportKHR(i, surface, v_dispatcher);
+            if(!presentFamily.has_value() && presentSupport) {
+                presentFamily = i;
+            }
+
+            if(graphicsFamily.has_value() && presentFamily.has_value())
+                break;
         }
 
-        if(!graphicsFamily) {
+        if(!graphicsFamily.has_value()) {
             throw std::runtime_error("Failed to find graphics queue family!");
         }
 
+        if(!presentFamily.has_value()) {
+            throw std::runtime_error("Failed to find present queue family!");
+        }
+
         graphics = *graphicsFamily;
+        present = *presentFamily;
     }
 };
 
@@ -35,7 +53,9 @@ class Device {
 public:
     Device(
         vk::Instance &instance,
+        vk::SurfaceKHR &surface,
         vk::PhysicalDeviceFeatures requestedFeatures,
+        const std::vector<const char*> &requestedExtensions,
         vk::DispatchLoaderDynamic &v_dispatcher
     ) : v_dispatcher(v_dispatcher){
         auto physical_devices = instance.enumeratePhysicalDevices(v_dispatcher);
@@ -45,9 +65,20 @@ public:
         for(auto &device : physical_devices) {
             auto features = device.getFeatures(v_dispatcher);
 
-            // TODO: Implement device picking
-            chosenDevice = device;
-            break;
+            // TODO: Implement feature check
+
+            std::set<std::string> requiredExtensions(requestedExtensions.begin(), requestedExtensions.end());
+
+            for(auto &availableExtension : 
+                device.enumerateDeviceExtensionProperties(nullptr, v_dispatcher))
+            {
+                requiredExtensions.erase(availableExtension.extensionName);
+            }
+
+            if(requiredExtensions.empty()) {
+                chosenDevice = device;
+                break;
+            }
         }
 
         if(chosenDevice == nullptr) {
@@ -56,19 +87,26 @@ public:
 
         v_physical_device = *chosenDevice;
 
-        auto queueFamilies = QueueFamilyIndices(v_physical_device, v_dispatcher);
+        auto queueFamilies = QueueFamilyIndices(v_physical_device, surface, v_dispatcher);
 
-        std::vector<float> queuePriorities = {1.0f};
+        std::set<uint32_t> uniqueQueueFamilies = {
+            queueFamilies.graphics,
+            queueFamilies.present,
+        };
+        std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
 
-        auto queueInfo = vk::DeviceQueueCreateInfo()
-            .setQueueFamilyIndex(queueFamilies.graphics)
-            .setQueuePriorities(queuePriorities)
-            .setQueueCount(1);
-
-        
+        for(auto queueFamily : uniqueQueueFamilies) {
+            const std::vector<float> queuePriorities = {1.0f};
+            auto queueInfo = vk::DeviceQueueCreateInfo()
+                .setQueueFamilyIndex(queueFamily)
+                .setQueuePriorities(queuePriorities)
+                .setQueueCount(1);
+            queueCreateInfos.push_back(queueInfo);
+        }
 
         auto deviceInfo = vk::DeviceCreateInfo()
-            .setQueueCreateInfos({queueInfo})
+            .setQueueCreateInfos(queueCreateInfos)
+            .setPEnabledExtensionNames(requestedExtensions)
             .setPEnabledFeatures(&requestedFeatures);
         
         if(Validation::enableValidationLayers) {
@@ -76,7 +114,11 @@ public:
         }
 
         v_device = v_physical_device.createDevice(deviceInfo, nullptr, v_dispatcher);
+
+        v_queue = v_device.getQueue(queueFamilies.graphics, 0, v_dispatcher);
+        v_present_queue = v_device.getQueue(queueFamilies.present, 0, v_dispatcher);
     }
+
     ~Device() {
         v_device.destroy(nullptr, v_dispatcher);
     }
@@ -84,7 +126,9 @@ public:
 public:
     vk::Device v_device;
     vk::PhysicalDevice v_physical_device;
+
     vk::Queue v_queue;
+    vk::Queue v_present_queue;
 
     vk::DispatchLoaderDynamic &v_dispatcher;
 };

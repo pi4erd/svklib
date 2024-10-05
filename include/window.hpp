@@ -20,7 +20,10 @@ public:
     virtual ~Window();
 
     void initVulkan(std::vector<const char*> requestedExtensions);
-    std::unique_ptr<Device> requestDevice(const vk::PhysicalDeviceFeatures &requestedFeatures);
+    std::unique_ptr<Device> requestDevice(
+        const vk::PhysicalDeviceFeatures &requestedFeatures,
+        const std::vector<const char*> &requestedExtensions
+    );
 
     bool shouldClose(void) { return glfwWindowShouldClose(window); }
     void close(void) { glfwSetWindowShouldClose(window, true); }
