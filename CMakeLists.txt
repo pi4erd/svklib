@@ -17,7 +17,7 @@ set(SGL_LIBRARIES svk PARENT_SCOPE)
 set(SGL_INCLUDE_DIRECTORIES ${CMAKE_PROJECT_SOURCE_DIR}/include PARENT_SCOPE)
 
 target_link_libraries(svk
-    PUBLIC fmt Vulkan::Vulkan glfw GLEW
+    PUBLIC fmt Vulkan::Vulkan glfw
 )
 
 add_subdirectory(examples)
