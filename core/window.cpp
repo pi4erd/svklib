@@ -11,6 +11,7 @@
 
 #include "log.hpp"
 #include "validation.hpp"
+#include "vkswapchain.hpp"
 
 Window::Window(std::string title, const std::vector<std::tuple<int, int>> &hints) : title(title)
 {
@@ -147,4 +148,14 @@ std::unique_ptr<Device> Window::requestDevice(
         requestedExtensions,
         v_dispatcher
     );
+}
+
+std::unique_ptr<Swapchain> Window::requestSwapchain(
+    Device &device,
+    PreferredSwapchainSettings preferredSettings
+) {
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+
+    return std::make_unique<Swapchain>(device, width, height, v_surface, preferredSettings, v_dispatcher);
 }

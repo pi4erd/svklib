@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vkdevice.hpp"
+#include "vkswapchain.hpp"
 
 #include <memory>
 #include <vulkan/vk_platform.h>
@@ -23,6 +24,10 @@ public:
     std::unique_ptr<Device> requestDevice(
         const vk::PhysicalDeviceFeatures &requestedFeatures,
         const std::vector<const char*> &requestedExtensions
+    );
+    std::unique_ptr<Swapchain> requestSwapchain(
+        Device &device,
+        PreferredSwapchainSettings preferredSettings
     );
 
     bool shouldClose(void) { return glfwWindowShouldClose(window); }

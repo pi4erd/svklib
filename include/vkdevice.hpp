@@ -1,5 +1,6 @@
 #pragma once
 
+#include "log.hpp"
 #include "validation.hpp"
 #include <optional>
 #include <set>
@@ -114,12 +115,19 @@ public:
         }
 
         v_device = v_physical_device.createDevice(deviceInfo, nullptr, v_dispatcher);
+        LOG_DEBUG("Created Vulkan device for {}.", v_physical_device.getProperties(v_dispatcher).deviceName.data());
+
+        v_dispatcher.init(v_device);
 
         v_queue = v_device.getQueue(queueFamilies.graphics, 0, v_dispatcher);
+        LOG_DEBUG("Created graphics queue.");
+
         v_present_queue = v_device.getQueue(queueFamilies.present, 0, v_dispatcher);
+        LOG_DEBUG("Created present queue.");
     }
 
     ~Device() {
+        LOG_DEBUG("Destroyed Vulkan device for {}.", v_physical_device.getProperties(v_dispatcher).deviceName.data());
         v_device.destroy(nullptr, v_dispatcher);
     }
 

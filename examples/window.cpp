@@ -1,8 +1,12 @@
 #include "window.hpp"
 #include "log.hpp"
+#include "vkswapchain.hpp"
+
 #include <memory>
 #include <stdexcept>
+
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_enums.hpp>
 #include <vulkan/vulkan_structs.hpp>
 
 class App : public Window {
@@ -21,15 +25,29 @@ public:
         );
         LOG_INFO("Chosen physical device {}", device->v_physical_device.getProperties(v_dispatcher).deviceName.data());
 
-        
+        swapchain = requestSwapchain(*device, PreferredSwapchainSettings {
+            .requestedCapabilities = vk::SurfaceCapabilitiesKHR(),
+            .preferredFormat = vk::Format::eB8G8R8A8Srgb,
+            .preferredPresentMode = vk::PresentModeKHR::eFifo
+        });
+        LOG_INFO("Swapchain created with extent {}x{}", 
+            swapchain->v_swapchain_extent.width, swapchain->v_swapchain_extent.height
+        );
     }
 
     void loop(double delta) {
-        
+        // auto image = device->v_device.acquireNextImageKHR(
+        //     swapchain->v_swapchain,
+        //     std::numeric_limits<uint64_t>::max(),
+        //     nullptr,
+        //     nullptr,
+        //     v_dispatcher
+        // );
     }
 
 private:
     std::unique_ptr<Device> device;
+    std::unique_ptr<Swapchain> swapchain;
 };
 
 int main(void) {
