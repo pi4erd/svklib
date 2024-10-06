@@ -9,10 +9,18 @@
 #define LOGLEVEL_ERROR 1
 #define LOGLEVEL_NONE 0
 
-#define LOG_DEBUG(...) if(logging::Logging::LOG_LEVEL >= LOGLEVEL_DEBUG) { fmt::println(">\tDEBUG:\t{}", fmt::format(__VA_ARGS__)); }
-#define LOG_INFO(...) if(logging::Logging::LOG_LEVEL >= LOGLEVEL_INFO) { fmt::println(">>\tINFO:\t{}", fmt::format(__VA_ARGS__)); }
-#define LOG_WARN(...) if(logging::Logging::LOG_LEVEL >= LOGLEVEL_WARN) { fmt::println(">>>\tWARN:\t{}", fmt::format(__VA_ARGS__)); }
-#define LOG_ERROR(...) if(logging::Logging::LOG_LEVEL >= LOGLEVEL_ERROR) { fmt::println(">>>>\tERROR:\t{}", fmt::format(__VA_ARGS__)); }
+#define LOG_DEBUG(...) if(logging::Logging::LOG_LEVEL >= LOGLEVEL_DEBUG) {\
+    fmt::println("\x1b[38;5;229m>\tDEBUG:\t\x1b[0m{}", fmt::format(__VA_ARGS__)); \
+}
+#define LOG_INFO(...) if(logging::Logging::LOG_LEVEL >= LOGLEVEL_INFO) { \
+    fmt::println("\x1b[38;5;111m>>\tINFO:\t\x1b[0m{}", fmt::format(__VA_ARGS__)); \
+}
+#define LOG_WARN(...) if(logging::Logging::LOG_LEVEL >= LOGLEVEL_WARN) { \
+    fmt::println("\x1b[38;5;208m>>>\tWARN:\t\x1b[0m{}", fmt::format(__VA_ARGS__)); \
+}
+#define LOG_ERROR(...) if(logging::Logging::LOG_LEVEL >= LOGLEVEL_ERROR) { \
+    fmt::println("\x1b[38;5;196m>>>>\tERROR:\t\x1b[0m{}", fmt::format(__VA_ARGS__)); \
+}
 
 namespace logging {
     // TODO: Implement instance-based logging sometime in the future
