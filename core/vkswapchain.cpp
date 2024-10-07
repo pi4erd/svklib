@@ -7,8 +7,10 @@
 #include <set>
 
 #include <vulkan/vulkan.hpp>
+#ifndef __MACH__
 #include <vulkan/vulkan_enums.hpp>
 #include <vulkan/vulkan_structs.hpp>
+#endif
 
 Swapchain::Swapchain(
     Device &device,

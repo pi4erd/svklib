@@ -3,17 +3,19 @@
 #include "vkdevice.hpp"
 #include "vkswapchain.hpp"
 
-#include <memory>
+#ifndef __MACH__
 #include <vulkan/vk_platform.h>
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_enums.hpp>
+#include <vulkan/vulkan_handles.hpp>
+#include <vulkan/vulkan_structs.hpp>
+#endif
 #include <GLFW/glfw3.h>
 
 #include <string>
 #include <vector>
 #include <tuple>
-#include <vulkan/vulkan_enums.hpp>
-#include <vulkan/vulkan_handles.hpp>
-#include <vulkan/vulkan_structs.hpp>
+#include <memory>
 
 class Window {
 public:

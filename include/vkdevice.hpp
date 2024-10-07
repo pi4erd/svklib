@@ -6,9 +6,11 @@
 #include <set>
 #include <stdexcept>
 #include <vulkan/vulkan.hpp>
+#ifndef __MACH__
 #include <vulkan/vulkan_enums.hpp>
 #include <vulkan/vulkan_handles.hpp>
 #include <vulkan/vulkan_structs.hpp>
+#endif
 
 struct QueueFamilyIndices {
     uint32_t graphics;

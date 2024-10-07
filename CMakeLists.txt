@@ -2,9 +2,22 @@ cmake_minimum_required(VERSION 3.20)
 
 project(sgllib VERSION 0.1.0)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED 17)
+
 find_package(fmt REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
+
+if(LINUX)
+
+elseif(WIN32)
+
+else()
+    # Assume MacOS
+    link_directories(/opt/homebrew/lib)
+    include_directories(/opt/homebrew/include)
+endif()
 
 FILE(GLOB SVK_SOURCE_FILES core/*.cpp)
 
