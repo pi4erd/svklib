@@ -15,11 +15,20 @@ public:
         Validation::enableValidationLayers = true;
 
         initVulkan({
-            vk::KHRSurfaceExtensionName
-        });
+            vk::KHRSurfaceExtensionName,
+        },
+#ifdef __MACH__
+            true
+#else
+            false
+#endif
+        );
         device = requestDevice(
             vk::PhysicalDeviceFeatures(),
             {
+#ifdef __MACH__
+                "VK_KHR_portability_subset",
+#endif
                 vk::KHRSwapchainExtensionName
             }
         );

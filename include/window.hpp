@@ -22,7 +22,7 @@ public:
     Window(std::string title, const std::vector<std::tuple<int, int>> &hints);
     virtual ~Window();
 
-    void initVulkan(std::vector<const char*> requestedExtensions);
+    void initVulkan(std::vector<const char*> requestedExtensions, bool portability=false);
     std::unique_ptr<Device> requestDevice(
         const vk::PhysicalDeviceFeatures &requestedFeatures,
         const std::vector<const char*> &requestedExtensions
@@ -78,6 +78,8 @@ public: // vulkan properties
     vk::DebugUtilsMessengerEXT v_messenger;
     vk::SurfaceKHR v_surface;
     vk::DispatchLoaderDynamic v_dispatcher;
+
+    bool vk_ready = false;
 
 private:
     bool fullscreen = false;

@@ -49,25 +49,26 @@ Window::Window(std::string title, const std::vector<std::tuple<int, int>> &hints
         static_cast<Window*>(glfwGetWindowUserPointer(window))->keyboardCallback(key, action, scancode, mod);
     };
     glfwSetKeyCallback(window, keyboardCall);
-
 }
 
 Window::~Window()
 {
     LOG_DEBUG("Stopping GLFW.");
 
-    v_instance.destroySurfaceKHR(v_surface, nullptr, v_dispatcher);
+    if(vk_ready) {
+        v_instance.destroySurfaceKHR(v_surface, nullptr, v_dispatcher);
 
-    v_instance.destroyDebugUtilsMessengerEXT(v_messenger, nullptr, v_dispatcher);
-    LOG_DEBUG("Destroyed Vulkan debug messenger.");
-    v_instance.destroy(nullptr, v_dispatcher);
-    LOG_DEBUG("Destroyed Vulkan instance.");
-
+        v_instance.destroyDebugUtilsMessengerEXT(v_messenger, nullptr, v_dispatcher);
+        LOG_DEBUG("Destroyed Vulkan debug messenger.");
+        v_instance.destroy(nullptr, v_dispatcher);
+        LOG_DEBUG("Destroyed Vulkan instance.");
+    }
+    
     glfwDestroyWindow(window);
     glfwTerminate();
 }
 
-void Window::initVulkan(std::vector<const char*> requestedExtensions) {
+void Window::initVulkan(std::vector<const char*> requestedExtensions, bool portability) {
     auto appinfo = vk::ApplicationInfo()
         .setPApplicationName(title.c_str())
         .setApplicationVersion(vk::makeApiVersion(0, 0, 1, 0))
@@ -81,6 +82,10 @@ void Window::initVulkan(std::vector<const char*> requestedExtensions) {
 
     if(Validation::enableValidationLayers) {
         requestedExtensions.push_back(vk::EXTDebugUtilsExtensionName);
+    }
+
+    if(portability) {
+        requestedExtensions.push_back(vk::KHRPortabilityEnumerationExtensionName);
     }
 
     uint32_t glfwExtensionCount;
@@ -99,6 +104,10 @@ void Window::initVulkan(std::vector<const char*> requestedExtensions) {
         instanceInfo = instanceInfo.setPEnabledLayerNames(enabledLayers);
     } else {
         instanceInfo = instanceInfo.setEnabledLayerCount(0);
+    }
+
+    if(portability) {
+        instanceInfo.setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR);
     }
 
     v_dispatcher.init();
@@ -135,6 +144,8 @@ void Window::initVulkan(std::vector<const char*> requestedExtensions) {
     }
 
     LOG_DEBUG("Created VkSurfaceKHR.");
+
+    vk_ready = true;
 }
 
 std::unique_ptr<Device> Window::requestDevice(
