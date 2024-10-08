@@ -1,3 +1,7 @@
+/*
+    Example for window with swapchain in Vulkan with svklib
+*/
+
 #include "window.hpp"
 #include "log.hpp"
 #include "vkswapchain.hpp"
@@ -29,7 +33,7 @@ public:
 #ifdef __MACH__
                 "VK_KHR_portability_subset",
 #endif
-                vk::KHRSwapchainExtensionName
+                vk::KHRSwapchainExtensionName,
             }
         );
         LOG_INFO("Chosen physical device {}", device->v_physical_device.getProperties(v_dispatcher).deviceName.data());
@@ -45,13 +49,7 @@ public:
     }
 
     void loop(double delta) {
-        // auto image = device->v_device.acquireNextImageKHR(
-        //     swapchain->v_swapchain,
-        //     std::numeric_limits<uint64_t>::max(),
-        //     nullptr,
-        //     nullptr,
-        //     v_dispatcher
-        // );
+        
     }
 
 private:
