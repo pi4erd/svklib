@@ -24,13 +24,14 @@ public:
             .setAttachment(0)
             .setLayout(vk::ImageLayout::eColorAttachmentOptimal);
         auto subpass = vk::SubpassDescription()
-            .setColorAttachments(ref);
+            .setColorAttachments(ref)
+            .setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
         auto dep = vk::SubpassDependency();
 
         // Properties
         // Optional:
         // - Dependencies ???
-        vk::RenderPassCreateInfo()
+        renderPassInfo = renderPassInfo
             .setSubpasses(subpass)
             .setAttachments(color_attachment);
 
