@@ -16,6 +16,10 @@ struct QueueFamilyIndices {
     uint32_t graphics;
     uint32_t present;
 
+    bool ready = false;
+
+    QueueFamilyIndices() {}
+
     QueueFamilyIndices(vk::PhysicalDevice &device, vk::SurfaceKHR &surface, vk::DispatchLoaderDynamic &v_dispatcher) {
         std::optional<uint32_t> graphicsFamily;
         std::optional<uint32_t> presentFamily;
@@ -49,6 +53,8 @@ struct QueueFamilyIndices {
 
         graphics = *graphicsFamily;
         present = *presentFamily;
+
+        ready = true;
     }
 };
 
@@ -60,7 +66,7 @@ public:
         vk::PhysicalDeviceFeatures requestedFeatures,
         const std::vector<const char*> &requestedExtensions,
         vk::DispatchLoaderDynamic &v_dispatcher
-    ) : v_dispatcher(v_dispatcher){
+    ) : v_dispatcher(v_dispatcher) {
         auto physical_devices = instance.enumeratePhysicalDevices(v_dispatcher);
 
         vk::Optional<vk::PhysicalDevice> chosenDevice = nullptr;
@@ -90,11 +96,11 @@ public:
 
         v_physical_device = *chosenDevice;
 
-        auto queueFamilies = QueueFamilyIndices(v_physical_device, surface, v_dispatcher);
+        queue_family_indices = QueueFamilyIndices(v_physical_device, surface, v_dispatcher);
 
         std::set<uint32_t> uniqueQueueFamilies = {
-            queueFamilies.graphics,
-            queueFamilies.present,
+            queue_family_indices.graphics,
+            queue_family_indices.present,
         };
         std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
 
@@ -121,10 +127,10 @@ public:
 
         v_dispatcher.init(v_device);
 
-        v_queue = v_device.getQueue(queueFamilies.graphics, 0, v_dispatcher);
+        v_queue = v_device.getQueue(queue_family_indices.graphics, 0, v_dispatcher);
         LOG_DEBUG("Created graphics queue.");
 
-        v_present_queue = v_device.getQueue(queueFamilies.present, 0, v_dispatcher);
+        v_present_queue = v_device.getQueue(queue_family_indices.present, 0, v_dispatcher);
         LOG_DEBUG("Created present queue.");
     }
 
@@ -136,6 +142,8 @@ public:
 public:
     vk::Device v_device;
     vk::PhysicalDevice v_physical_device;
+
+    QueueFamilyIndices queue_family_indices;
 
     vk::Queue v_queue;
     vk::Queue v_present_queue;

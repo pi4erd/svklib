@@ -2,6 +2,7 @@
     Example for window with triangle in Vulkan with svklib
 */
 
+#include "commandpool.hpp"
 #include "shader.hpp"
 #include "vkpipeline.hpp"
 #include "vkrenderpass.hpp"
@@ -117,6 +118,58 @@ public:
         );
 
         swapchain->initFramebuffers(*render_pass);
+        command_pool = std::make_unique<CommandPool>(
+            *device,
+            device->queue_family_indices.graphics,
+            vk::CommandPoolCreateFlags(),
+            v_dispatcher
+        );
+
+        graphicsCommandBuffer = command_pool->createCommandBuffer();
+    }
+
+    void recordCmdBuffer(uint32_t imageIndex) {
+        graphicsCommandBuffer.begin(vk::CommandBufferBeginInfo());
+
+        auto clearColor = vk::ClearValue(
+            vk::ClearColorValue(1.0f, 1.0f, 1.0f, 1.0f)
+        );
+            
+        auto renderPassBegin = vk::RenderPassBeginInfo()
+            .setRenderPass(render_pass->v_render_pass)
+            .setRenderArea({
+                {0, 0},
+                swapchain->v_swapchain_extent.height,
+            }).setClearValues(clearColor)
+            .setFramebuffer(swapchain->framebuffers[imageIndex]);
+        
+        graphicsCommandBuffer.beginRenderPass(renderPassBegin, vk::SubpassContents::eInline, v_dispatcher);
+
+        graphicsCommandBuffer.bindPipeline(
+            vk::PipelineBindPoint::eGraphics,
+            pipeline->v_pipeline,
+            v_dispatcher
+        );
+
+        auto viewport = vk::Viewport()
+            .setWidth(swapchain->v_swapchain_extent.width)
+            .setHeight(swapchain->v_swapchain_extent.height)
+            .setMinDepth(0.0)
+            .setMaxDepth(1.0)
+            .setX(0.0)
+            .setY(0.0);
+        graphicsCommandBuffer.setViewport(0, viewport, v_dispatcher);
+        
+        auto scissor = vk::Rect2D()
+            .setOffset({0, 0})
+            .setExtent(swapchain->v_swapchain_extent);
+        graphicsCommandBuffer.setScissor(0, scissor, v_dispatcher);
+
+        graphicsCommandBuffer.draw(3, 1, 0, 0, v_dispatcher);
+
+        graphicsCommandBuffer.endRenderPass(v_dispatcher);
+
+        graphicsCommandBuffer.end(v_dispatcher);
     }
 
     void loop(double delta) {
@@ -128,6 +181,9 @@ private:
     Swapchain *swapchain;
     std::unique_ptr<RenderPass> render_pass;
     std::unique_ptr<Pipeline> pipeline;
+    std::unique_ptr<CommandPool> command_pool;
+
+    vk::CommandBuffer graphicsCommandBuffer;
 };
 
 int main(void) {
