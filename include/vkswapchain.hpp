@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vkdevice.hpp"
+#include "vkrenderpass.hpp"
 
 #include <vulkan/vulkan.hpp>
 #ifndef __MACH__
@@ -32,6 +33,8 @@ public:
     );
     ~Swapchain();
 
+    void initFramebuffers(RenderPass &render_pass);
+
     std::vector<vk::ImageView> createImageViews();
 
     SwapChainSupportDetails querySupportDetails(vk::SurfaceKHR surface);
@@ -44,6 +47,7 @@ public:
 
     std::vector<vk::Image> images;
     std::vector<vk::ImageView> imageViews;
+    std::vector<vk::Framebuffer> framebuffers;
 
     vk::Format v_image_format;
     vk::Extent2D v_swapchain_extent;

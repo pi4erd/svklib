@@ -84,12 +84,34 @@ Swapchain::Swapchain(
 }
 
 Swapchain::~Swapchain() {
+    for(auto &framebuffer : framebuffers) {
+        device.v_device.destroyFramebuffer(framebuffer, nullptr, v_dispatcher);
+    }
+
     for(auto &imageView : imageViews) {
         device.v_device.destroyImageView(imageView, nullptr, v_dispatcher);
     }
 
     device.v_device.destroySwapchainKHR(v_swapchain, nullptr, v_dispatcher);
     LOG_DEBUG("Destroyed swapchain.");
+}
+
+void Swapchain::initFramebuffers(RenderPass &render_pass) {
+    std::vector<vk::Framebuffer> framebuffers;
+    framebuffers.resize(imageViews.size());
+
+    for(size_t i = 0; i < imageViews.size(); i++) {
+        vk::ImageView &attachment = imageViews[i];
+
+        auto framebufferInfo = vk::FramebufferCreateInfo()
+            .setAttachments(attachment)
+            .setWidth(v_swapchain_extent.width)
+            .setHeight(v_swapchain_extent.height)
+            .setRenderPass(render_pass.v_render_pass)
+            .setLayers(1);
+        
+        framebuffers[i] = device.v_device.createFramebuffer(framebufferInfo, nullptr, v_dispatcher);
+    }
 }
 
 std::vector<vk::ImageView> Swapchain::createImageViews() {
