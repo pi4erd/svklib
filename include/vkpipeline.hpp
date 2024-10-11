@@ -19,16 +19,11 @@ public:
     Pipeline(
         Device &device,
         RenderPass &render_pass,
-        const std::vector<Shader> &shader_stages,
+        const std::vector<vk::PipelineShaderStageCreateInfo> &shader_stages,
         vk::PipelineLayoutCreateInfo layout_info,
         vk::GraphicsPipelineCreateInfo pipeline_info,
         vk::DispatchLoaderDynamic &dispatcher
     ): device(device), render_pass(render_pass), v_dispatcher(dispatcher) {
-        std::vector<vk::PipelineShaderStageCreateInfo> shaderStagesInfo;
-        for(const auto &shader : shader_stages) {
-            shaderStagesInfo.push_back(shader.v_stage_info);
-        }
-
         std::array<vk::DynamicState, 2> dynamicStates = {
             vk::DynamicState::eScissor,
             vk::DynamicState::eViewport
@@ -55,17 +50,18 @@ public:
             .setPViewportState(&vk::PipelineViewportStateCreateInfo()
                 .setViewportCount(1)
                 .setScissorCount(1)
-            ).setStages(shaderStagesInfo)
+            ).setStages(shader_stages)
             .setPDynamicState(&dynamicStateInfo);
 
         auto result = device.v_device.createGraphicsPipeline(nullptr, pipeline_info, nullptr, v_dispatcher);
 
-        if(result.result != vk::Result::eSuccess) {
+        if(result.result != vk::Result::eSuccess && result.result != vk::Result::ePipelineCompileRequiredEXT) {
             throw std::runtime_error(
-                fmt::format("Failed to create graphics pipeline: code {}.", TOSTRING(result.result))
+                fmt::format("Failed to create graphics pipeline: code {}.", (uint32_t)result.result)
             );
         }
 
+        v_pipeline = result.value;
         LOG_DEBUG("Created GraphicsPipeline.");
     }
 

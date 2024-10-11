@@ -15,7 +15,6 @@
 #include <string>
 #include <vector>
 #include <tuple>
-#include <memory>
 
 class Window {
 public:
@@ -23,12 +22,11 @@ public:
     virtual ~Window();
 
     void initVulkan(std::vector<const char*> requestedExtensions, bool portability=false);
-    std::unique_ptr<Device> requestDevice(
+    Device *requestDevice(
         const vk::PhysicalDeviceFeatures &requestedFeatures,
         const std::vector<const char*> &requestedExtensions
     );
-    std::unique_ptr<Swapchain> requestSwapchain(
-        Device &device,
+    Swapchain *requestSwapchain(
         PreferredSwapchainSettings preferredSettings
     );
 
@@ -78,6 +76,9 @@ public: // vulkan properties
     vk::DebugUtilsMessengerEXT v_messenger;
     vk::SurfaceKHR v_surface;
     vk::DispatchLoaderDynamic v_dispatcher;
+
+    Device *v_device = nullptr;
+    Swapchain *v_swapchain = nullptr;
 
     bool vk_ready = false;
 

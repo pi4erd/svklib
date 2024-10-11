@@ -97,7 +97,6 @@ Swapchain::~Swapchain() {
 }
 
 void Swapchain::initFramebuffers(RenderPass &render_pass) {
-    std::vector<vk::Framebuffer> framebuffers;
     framebuffers.resize(imageViews.size());
 
     for(size_t i = 0; i < imageViews.size(); i++) {

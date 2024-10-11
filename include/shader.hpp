@@ -1,12 +1,11 @@
 #pragma once
 
 #include <cstdint>
-#include <iterator>
 #include <string>
-#include <fstream>
 
 #include <vulkan/vulkan.hpp>
 
+#include "fileutil.hpp"
 #include "vkdevice.hpp"
 
 class Shader {
@@ -18,7 +17,7 @@ public:
         vk::DispatchLoaderDynamic dispatcher,
         const std::string &entrypoint = "main"
     ) : device(device), v_dispatcher(dispatcher) {
-        std::vector<uint8_t> code = readFile(path);
+        std::vector<uint8_t> code = utils::readFileBinary(path);
 
         auto shaderInfo = vk::ShaderModuleCreateInfo()
             .setPCode(reinterpret_cast<const uint32_t*>(code.data()))
@@ -28,7 +27,8 @@ public:
 
         v_stage_info = vk::PipelineShaderStageCreateInfo()
             .setStage(stage)
-            .setModule(v_shader);
+            .setModule(v_shader)
+            .setPName(entrypoint.c_str());
     }
 
     ~Shader() {
@@ -41,13 +41,4 @@ public:
     vk::ShaderModule v_shader;
     vk::PipelineShaderStageCreateInfo v_stage_info;
     vk::DispatchLoaderDynamic v_dispatcher;
-
-private:
-    [[nodiscard]] static const std::vector<uint8_t> readFile(const std::string &path) {
-        std::ifstream file(path, std::ios::binary);
-
-        std::vector<uint8_t> bytes(std::istreambuf_iterator<char>(), {});
-
-        return bytes;
-    }
 };

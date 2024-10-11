@@ -1,7 +1,6 @@
 #include "window.hpp"
 
 #include <GLFW/glfw3.h>
-#include <memory>
 #include <stdexcept>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_core.h>
@@ -54,6 +53,12 @@ Window::Window(std::string title, const std::vector<std::tuple<int, int>> &hints
 Window::~Window()
 {
     LOG_DEBUG("Stopping GLFW.");
+
+    if(v_swapchain != nullptr)
+        delete v_swapchain;
+
+    if(v_device != nullptr)
+        delete v_device;
 
     if(vk_ready) {
         v_instance.destroySurfaceKHR(v_surface, nullptr, v_dispatcher);
@@ -148,25 +153,34 @@ void Window::initVulkan(std::vector<const char*> requestedExtensions, bool porta
     vk_ready = true;
 }
 
-std::unique_ptr<Device> Window::requestDevice(
+Device *Window::requestDevice(
     const vk::PhysicalDeviceFeatures &requestedFeatures,
     const std::vector<const char*> &requestedExtensions
 ) {
-    return std::make_unique<Device>(
-        v_instance,
+    v_device = new Device(
+    v_instance,
         v_surface,
         vk::PhysicalDeviceFeatures(),
         requestedExtensions,
         v_dispatcher
     );
+    return v_device;
 }
 
-std::unique_ptr<Swapchain> Window::requestSwapchain(
-    Device &device,
+Swapchain *Window::requestSwapchain(
     PreferredSwapchainSettings preferredSettings
 ) {
     int width, height;
     glfwGetWindowSize(window, &width, &height);
 
-    return std::make_unique<Swapchain>(device, width, height, v_surface, preferredSettings, v_dispatcher);
+    v_swapchain = new Swapchain(
+        *v_device,
+        width,
+        height,
+        v_surface, 
+        preferredSettings,
+        v_dispatcher
+    );
+
+    return v_swapchain;
 }

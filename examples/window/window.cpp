@@ -6,7 +6,6 @@
 #include "log.hpp"
 #include "vkswapchain.hpp"
 
-#include <memory>
 #include <stdexcept>
 
 #include <vulkan/vulkan.hpp>
@@ -38,7 +37,7 @@ public:
         );
         LOG_INFO("Chosen physical device {}", device->v_physical_device.getProperties(v_dispatcher).deviceName.data());
 
-        swapchain = requestSwapchain(*device, PreferredSwapchainSettings {
+        swapchain = requestSwapchain(PreferredSwapchainSettings {
             .requestedCapabilities = vk::SurfaceCapabilitiesKHR(),
             .preferredFormat = vk::Format::eB8G8R8A8Srgb,
             .preferredPresentMode = vk::PresentModeKHR::eFifo
@@ -53,8 +52,8 @@ public:
     }
 
 private:
-    std::unique_ptr<Device> device;
-    std::unique_ptr<Swapchain> swapchain;
+    Device *device;
+    Swapchain *swapchain;
 };
 
 int main(void) {
