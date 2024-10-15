@@ -3,10 +3,12 @@
 #include "vkdevice.hpp"
 
 #include <algorithm>
+#include <cstdint>
 #include <limits>
 #include <set>
 
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_handles.hpp>
 #ifndef __MACH__
 #include <vulkan/vulkan_enums.hpp>
 #include <vulkan/vulkan_structs.hpp>
@@ -62,7 +64,8 @@ Swapchain::Swapchain(
         .setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
         .setClipped(vk::True);
     
-    QueueFamilyIndices indices(device.v_physical_device, surface, v_dispatcher);
+    QueueFamilyIndices indices = device.queue_family_indices;
+
     if(indices.graphics != indices.present) {
         const std::vector<uint32_t> queueFamilyIndices = {indices.graphics, indices.present};
         swapchainInfo = swapchainInfo.setImageSharingMode(vk::SharingMode::eConcurrent)
@@ -140,6 +143,24 @@ std::vector<vk::ImageView> Swapchain::createImageViews() {
     return result;
 }
 
+vk::ResultValue<uint32_t> Swapchain::acquireImage(
+    vk::Optional<Semaphore> semaphore,
+    vk::Optional<Fence> fence,
+    uint64_t timeout
+) {
+    vk::Semaphore semaphoreChecked = semaphore == nullptr ? nullptr :
+        semaphore->v_semaphore;
+    vk::Fence fenceChecked = fence == nullptr ? nullptr :
+        fence->v_fence;
+    
+    return device.v_device.acquireNextImageKHR(
+        v_swapchain,
+        timeout,
+        semaphoreChecked,
+        fenceChecked,
+        v_dispatcher
+    );
+}
 
 vk::Extent2D Swapchain::chooseExtent(int windowWidth, int windowHeight, vk::SurfaceCapabilitiesKHR &caps) {
     if(caps.currentExtent.width != std::numeric_limits<uint32_t>::max()) {

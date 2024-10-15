@@ -1,7 +1,9 @@
 #pragma once
 
 #include "vkdevice.hpp"
+#include "vkfence.hpp"
 #include "vkrenderpass.hpp"
+#include "vksemaphore.hpp"
 
 #include <vulkan/vulkan.hpp>
 #ifndef __MACH__
@@ -38,6 +40,12 @@ public:
     std::vector<vk::ImageView> createImageViews();
 
     SwapChainSupportDetails querySupportDetails(vk::SurfaceKHR surface);
+
+    vk::ResultValue<uint32_t> acquireImage(
+        vk::Optional<Semaphore> semaphore,
+        vk::Optional<Fence> fence,
+        uint64_t timeout=std::numeric_limits<uint64_t>::max()
+    );
 
 private:
     vk::Extent2D chooseExtent(int windowWidth, int windowHeight, vk::SurfaceCapabilitiesKHR &caps);

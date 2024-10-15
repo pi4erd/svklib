@@ -4,12 +4,15 @@
 
 #include "commandpool.hpp"
 #include "shader.hpp"
+#include "vkfence.hpp"
 #include "vkpipeline.hpp"
 #include "vkrenderpass.hpp"
+#include "vksemaphore.hpp"
 #include "window.hpp"
 #include "log.hpp"
 #include "vkswapchain.hpp"
 
+#include <limits>
 #include <memory>
 #include <stdexcept>
 
@@ -20,7 +23,7 @@
 
 class App : public Window {
 public:
-    App() : Window("Window Example", {}) {
+    App() : Window("Triangle Example", {}) {
         Validation::enableValidationLayers = true;
 
         initVulkan({
@@ -121,25 +124,33 @@ public:
         command_pool = std::make_unique<CommandPool>(
             *device,
             device->queue_family_indices.graphics,
-            vk::CommandPoolCreateFlags(),
+            vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
             v_dispatcher
         );
 
         graphicsCommandBuffer = command_pool->createCommandBuffer();
+
+        image_ready = std::make_unique<Semaphore>(*device, v_dispatcher);
+        render_finished = std::make_unique<Semaphore>(*device, v_dispatcher);
+        in_flight_fence = std::make_unique<Fence>(*device, true, v_dispatcher);
+    }
+
+    ~App() {
+        device->v_device.waitIdle(v_dispatcher);
     }
 
     void recordCmdBuffer(uint32_t imageIndex) {
         graphicsCommandBuffer.begin(vk::CommandBufferBeginInfo());
 
         auto clearColor = vk::ClearValue(
-            vk::ClearColorValue(1.0f, 1.0f, 1.0f, 1.0f)
+            vk::ClearColorValue(0.1f, 0.2f, 0.3f, 1.0f)
         );
             
         auto renderPassBegin = vk::RenderPassBeginInfo()
             .setRenderPass(render_pass->v_render_pass)
             .setRenderArea({
                 {0, 0},
-                swapchain->v_swapchain_extent.height,
+                swapchain->v_swapchain_extent,
             }).setClearValues(clearColor)
             .setFramebuffer(swapchain->framebuffers[imageIndex]);
         
@@ -152,8 +163,8 @@ public:
         );
 
         auto viewport = vk::Viewport()
-            .setWidth(swapchain->v_swapchain_extent.width)
-            .setHeight(swapchain->v_swapchain_extent.height)
+            .setWidth(static_cast<float>(swapchain->v_swapchain_extent.width))
+            .setHeight(static_cast<float>(swapchain->v_swapchain_extent.height))
             .setMinDepth(0.0)
             .setMaxDepth(1.0)
             .setX(0.0)
@@ -173,7 +184,51 @@ public:
     }
 
     void loop(double delta) {
+        vk::Result waitResult = device->v_device.waitForFences(
+            in_flight_fence->v_fence,
+            vk::True,
+            std::numeric_limits<uint64_t>::max(),
+            v_dispatcher
+        );
+        if(waitResult != vk::Result::eSuccess) {
+            throw std::runtime_error("Failed to wait on fences!");
+        }
+        device->v_device.resetFences(in_flight_fence->v_fence, v_dispatcher);
+
+        auto acquireResult = swapchain->acquireImage(*image_ready, nullptr);
+        if(acquireResult.result != vk::Result::eSuccess) {
+            throw std::runtime_error("Failed to acquire image! (possibly unimplemented out-of-date surface)");
+        }
+        uint32_t imageIndex = acquireResult.value;
+
+        graphicsCommandBuffer.reset();
+        recordCmdBuffer(imageIndex);
+
+        std::vector<vk::PipelineStageFlags> waitStages = {
+            vk::PipelineStageFlagBits::eColorAttachmentOutput
+        };
         
+        auto renderSubmit = vk::SubmitInfo()
+            .setWaitSemaphores(image_ready->v_semaphore)
+            .setWaitDstStageMask(waitStages)
+            .setCommandBuffers(graphicsCommandBuffer)
+            .setSignalSemaphores(render_finished->v_semaphore);
+
+        // LOG_DEBUG("Submitting rendering frame {}", frame);
+        device->v_queue.submit({renderSubmit}, in_flight_fence->v_fence, v_dispatcher);
+
+        auto presentInfo = vk::PresentInfoKHR()
+            .setImageIndices(imageIndex)
+            .setSwapchains(swapchain->v_swapchain)
+            .setWaitSemaphores(render_finished->v_semaphore);
+        
+        // LOG_DEBUG("Presenting frame {}", frame);
+        auto presentResult = device->v_present_queue.presentKHR(presentInfo, v_dispatcher);
+        if(presentResult != vk::Result::eSuccess) {
+            throw std::runtime_error(fmt::format("Failed to present: {}", (uint32_t)presentResult));
+        }
+
+        frame++;
     }
 
 private:
@@ -183,7 +238,14 @@ private:
     std::unique_ptr<Pipeline> pipeline;
     std::unique_ptr<CommandPool> command_pool;
 
+    std::unique_ptr<Semaphore> image_ready;
+    std::unique_ptr<Semaphore> render_finished;
+    std::unique_ptr<Fence> in_flight_fence;
+
     vk::CommandBuffer graphicsCommandBuffer;
+
+private:
+    int frame = 0;
 };
 
 int main(void) {
