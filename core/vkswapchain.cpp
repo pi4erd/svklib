@@ -20,7 +20,7 @@ Swapchain::Swapchain(
     vk::SurfaceKHR surface,
     PreferredSwapchainSettings preferredSettings,
     vk::DispatchLoaderDynamic &dispatcher
-) : device(device), v_dispatcher(dispatcher) {
+) : device(device), v_surface(surface), framebuffer_render_pass(nullptr), v_dispatcher(dispatcher) {
     auto supportDetails = querySupportDetails(surface);
 
     // std::set<vk::SurfaceFormatKHR> formatsUnique(supportDetails.formats.begin(), supportDetails.formats.end());
@@ -76,7 +76,8 @@ Swapchain::Swapchain(
 
     v_swapchain = device.v_device.createSwapchainKHR(swapchainInfo, nullptr, v_dispatcher);
     v_swapchain_extent = extent;
-    v_image_format = chosenFormat.format;
+    v_format = chosenFormat;
+    v_present_mode = chosenPresentMode;
 
     LOG_DEBUG("Created swapchain with extent {}x{}", extent.width, extent.height);
 
@@ -87,10 +88,16 @@ Swapchain::Swapchain(
 }
 
 Swapchain::~Swapchain() {
-    for(auto &framebuffer : framebuffers) {
-        device.v_device.destroyFramebuffer(framebuffer, nullptr, v_dispatcher);
-    }
+    cleanupSwapchain();
+}
 
+void Swapchain::cleanupSwapchain() {
+    if(framebuffers.size() != 0) {
+        for(auto &framebuffer : framebuffers) {
+            device.v_device.destroyFramebuffer(framebuffer, nullptr, v_dispatcher);
+        }
+    }
+    
     for(auto &imageView : imageViews) {
         device.v_device.destroyImageView(imageView, nullptr, v_dispatcher);
     }
@@ -99,7 +106,53 @@ Swapchain::~Swapchain() {
     LOG_DEBUG("Destroyed swapchain.");
 }
 
+
+void Swapchain::recreate(int windowWidth, int windowHeight) {
+    auto supportDetails = querySupportDetails(v_surface);
+    bool recreateFramebuffers = framebuffers.size() != 0;
+
+    auto extent = chooseExtent(windowWidth, windowHeight, supportDetails.capabilities);
+
+    cleanupSwapchain();
+
+    uint32_t imageCount = supportDetails.capabilities.minImageCount + 1;
+    if(supportDetails.capabilities.maxImageCount > 0 && imageCount > supportDetails.capabilities.maxImageCount) {
+        imageCount = supportDetails.capabilities.maxImageCount;
+    }
+
+    auto swapchainInfo = vk::SwapchainCreateInfoKHR()
+        .setSurface(v_surface)
+        .setMinImageCount(imageCount)
+        .setImageFormat(v_format.format)
+        .setImageColorSpace(v_format.colorSpace)
+        .setPresentMode(v_present_mode)
+        .setImageExtent(extent)
+        .setImageArrayLayers(1)
+        .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
+        .setPreTransform(supportDetails.capabilities.currentTransform)
+        .setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
+        .setClipped(vk::True);
+    
+    QueueFamilyIndices indices = device.queue_family_indices;
+
+    v_swapchain = device.v_device.createSwapchainKHR(swapchainInfo, nullptr, v_dispatcher);
+    v_swapchain_extent = extent;
+
+    LOG_DEBUG("Created swapchain with extent {}x{}", extent.width, extent.height);
+
+    images = device.v_device.getSwapchainImagesKHR(v_swapchain, v_dispatcher);
+
+    imageViews = createImageViews();
+    LOG_DEBUG("Created {} image views.", imageViews.size());
+
+    if(recreateFramebuffers) {
+        initFramebuffers(*framebuffer_render_pass);
+    }
+}
+
 void Swapchain::initFramebuffers(RenderPass &render_pass) {
+    framebuffer_render_pass = render_pass;
+
     framebuffers.resize(imageViews.size());
 
     for(size_t i = 0; i < imageViews.size(); i++) {
@@ -129,7 +182,7 @@ std::vector<vk::ImageView> Swapchain::createImageViews() {
                 .setR(vk::ComponentSwizzle::eIdentity)
                 .setG(vk::ComponentSwizzle::eIdentity)
                 .setB(vk::ComponentSwizzle::eIdentity)
-            ).setFormat(v_image_format)
+            ).setFormat(v_format.format)
             .setSubresourceRange(vk::ImageSubresourceRange()
                 .setAspectMask(vk::ImageAspectFlagBits::eColor)
                 .setBaseMipLevel(0)

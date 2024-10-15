@@ -39,6 +39,8 @@ public:
         return v_swapchain;
     }
 
+    void recreate(int windowWidth, int windowHeight);
+
     void initFramebuffers(RenderPass &render_pass);
 
     std::vector<vk::ImageView> createImageViews();
@@ -52,6 +54,8 @@ public:
     );
 
 private:
+    void cleanupSwapchain();
+
     vk::Extent2D chooseExtent(int windowWidth, int windowHeight, vk::SurfaceCapabilitiesKHR &caps);
 
 public:
@@ -61,9 +65,13 @@ public:
     std::vector<vk::ImageView> imageViews;
     std::vector<vk::Framebuffer> framebuffers;
 
-    vk::Format v_image_format;
-    vk::Extent2D v_swapchain_extent;
+    vk::Optional<RenderPass> framebuffer_render_pass;
 
+    vk::SurfaceFormatKHR v_format;
+    vk::Extent2D v_swapchain_extent;
+    vk::PresentModeKHR v_present_mode;
+
+    vk::SurfaceKHR v_surface;
     vk::DispatchLoaderDynamic &v_dispatcher;
     vk::SwapchainKHR v_swapchain;
 };

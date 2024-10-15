@@ -57,7 +57,7 @@ public:
 
         render_pass = std::make_unique<RenderPass>(
             *device,
-            swapchain->v_image_format,
+            swapchain->v_format.format,
             vk::RenderPassCreateInfo(),
             v_dispatcher
         );
@@ -237,6 +237,11 @@ public:
         }
 
         frame++;
+    }
+
+protected:
+    void resize(int width, int height) override {
+        swapchain->recreate(width, height);
     }
 
 private:
