@@ -35,6 +35,10 @@ public:
     );
     ~Swapchain();
 
+    vk::SwapchainKHR operator*() {
+        return v_swapchain;
+    }
+
     void initFramebuffers(RenderPass &render_pass);
 
     std::vector<vk::ImageView> createImageViews();

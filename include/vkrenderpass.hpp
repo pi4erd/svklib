@@ -55,6 +55,10 @@ public:
         device.v_device.destroyRenderPass(v_render_pass, nullptr, v_dispatcher);
     }
 
+    vk::RenderPass operator*() {
+        return v_render_pass;
+    }
+
 public:
     Device &device;
 

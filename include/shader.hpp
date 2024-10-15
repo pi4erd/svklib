@@ -4,6 +4,7 @@
 #include <string>
 
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_structs.hpp>
 
 #include "fileutil.hpp"
 #include "vkdevice.hpp"
@@ -33,6 +34,10 @@ public:
 
     ~Shader() {
         device.v_device.destroyShaderModule(v_shader, nullptr, v_dispatcher);
+    }
+
+    vk::PipelineShaderStageCreateInfo operator*() {
+        return v_stage_info;
     }
 
 public:

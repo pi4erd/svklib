@@ -14,6 +14,10 @@ public:
         device.v_device.destroySemaphore(v_semaphore, nullptr, v_dispatcher);
     }
 
+    vk::Semaphore operator*() {
+        return v_semaphore;
+    }
+
 public:
     Device &device;
 

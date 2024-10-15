@@ -83,6 +83,10 @@ public:
         LOG_DEBUG("Destroy Pipeline");
     }
 
+    vk::Pipeline operator*() {
+        return v_pipeline;
+    }
+
 public:
     Device &device;
     RenderPass &render_pass;

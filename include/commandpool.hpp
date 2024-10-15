@@ -23,6 +23,10 @@ public:
         device.v_device.destroyCommandPool(v_command_pool, nullptr, v_dispatcher);
     }
 
+    vk::CommandPool operator*() {
+        return v_command_pool;
+    }
+
     std::vector<vk::CommandBuffer> createCommandBuffers(
         uint32_t n,
         vk::CommandBufferLevel level=vk::CommandBufferLevel::ePrimary

@@ -139,6 +139,10 @@ public:
         v_device.destroy(nullptr, v_dispatcher);
     }
 
+    vk::Device operator*() {
+        return v_device;
+    }
+
 public:
     vk::Device v_device;
     vk::PhysicalDevice v_physical_device;

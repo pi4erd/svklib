@@ -22,6 +22,10 @@ public:
         device.v_device.destroyFence(v_fence, nullptr, v_dispatcher);
     }
 
+    vk::Fence operator*() {
+        return v_fence;
+    }
+
 public:
     Device &device;
 
