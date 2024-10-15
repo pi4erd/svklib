@@ -81,6 +81,11 @@ public:
         auto colorBlendInfo = vk::PipelineColorBlendStateCreateInfo()
             .setAttachments(vk::PipelineColorBlendAttachmentState()
                 .setBlendEnable(vk::False)
+                .setColorWriteMask(vk::ColorComponentFlagBits::eR |
+                    vk::ColorComponentFlagBits::eG |
+                    vk::ColorComponentFlagBits::eB |
+                    vk::ColorComponentFlagBits::eA
+                )
             );
         
         auto inputAssembly = vk::PipelineInputAssemblyStateCreateInfo()
@@ -145,13 +150,16 @@ public:
         auto clearColor = vk::ClearValue(
             vk::ClearColorValue(0.1f, 0.2f, 0.3f, 1.0f)
         );
-            
+        
+        vk::Rect2D renderArea = {
+            {0, 0},
+            swapchain->v_swapchain_extent,
+        };
+
         auto renderPassBegin = vk::RenderPassBeginInfo()
             .setRenderPass(render_pass->v_render_pass)
-            .setRenderArea({
-                {0, 0},
-                swapchain->v_swapchain_extent,
-            }).setClearValues(clearColor)
+            .setRenderArea(renderArea)
+            .setClearValues(clearColor)
             .setFramebuffer(swapchain->framebuffers[imageIndex]);
         
         graphicsCommandBuffer.beginRenderPass(renderPassBegin, vk::SubpassContents::eInline, v_dispatcher);

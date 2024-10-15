@@ -1,12 +1,15 @@
 #include "window.hpp"
 
 #include <GLFW/glfw3.h>
+#include <cstdint>
+#include <fmt/format.h>
 #include <stdexcept>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_core.h>
 #include <vulkan/vulkan_enums.hpp>
 #include <vulkan/vulkan_funcs.hpp>
 #include <vulkan/vulkan_structs.hpp>
+#include <vulkan/vulkan_to_string.hpp>
 
 #include "log.hpp"
 #include "validation.hpp"
@@ -139,13 +142,18 @@ void Window::initVulkan(std::vector<const char*> requestedExtensions, bool porta
         LOG_DEBUG("Initialized Vulkan debug messenger.");
     }
 
-    if(glfwCreateWindowSurface(
+    vk::Result surfaceCreateResult = (vk::Result)glfwCreateWindowSurface(
         static_cast<VkInstance>(v_instance),
         window,
         nullptr,
         reinterpret_cast<VkSurfaceKHR*>(&v_surface)
-    ) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create window surface!");
+    );
+
+    if(surfaceCreateResult != vk::Result::eSuccess) {
+        throw std::runtime_error(fmt::format(
+            "Failed to create window surface! Error code: {}",
+            vk::to_string(surfaceCreateResult)
+        ));
     }
 
     LOG_DEBUG("Created VkSurfaceKHR.");
