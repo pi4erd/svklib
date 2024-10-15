@@ -20,6 +20,7 @@
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_enums.hpp>
 #include <vulkan/vulkan_structs.hpp>
+#include <vulkan/vulkan_to_string.hpp>
 
 class App : public Window {
 public:
@@ -199,14 +200,22 @@ public:
             v_dispatcher
         );
         if(waitResult != vk::Result::eSuccess) {
-            throw std::runtime_error("Failed to wait on fences!");
+            THROW(runtime_error, "Failed to wait on fences: {}.", vk::to_string(waitResult));
         }
-        device->v_device.resetFences(in_flight_fence->v_fence, v_dispatcher);
 
         auto acquireResult = swapchain->acquireImage(*image_ready, nullptr);
-        if(acquireResult.result != vk::Result::eSuccess) {
-            throw std::runtime_error("Failed to acquire image! (possibly unimplemented out-of-date surface)");
+        switch((uint32_t)acquireResult.result) {
+            case (uint32_t)vk::Result::eSuccess:
+            device->v_device.resetFences(in_flight_fence->v_fence, v_dispatcher);
+            break;
+            case (uint32_t)vk::Result::eSuboptimalKHR:
+            case (uint32_t)vk::Result::eErrorOutOfDateKHR:
+            swapchain->recreate(width, height);
+            return;
+            default:
+            THROW(runtime_error, "Failed to acquire image: {}.", vk::to_string(acquireResult.result));
         }
+        
         uint32_t imageIndex = acquireResult.value;
 
         graphicsCommandBuffer.reset();
@@ -233,7 +242,7 @@ public:
         // LOG_DEBUG("Presenting frame {}", frame);
         auto presentResult = device->v_present_queue.presentKHR(presentInfo, v_dispatcher);
         if(presentResult != vk::Result::eSuccess) {
-            throw std::runtime_error(fmt::format("Failed to present: {}", (uint32_t)presentResult));
+            THROW(runtime_error, fmt::format("Failed to present: {}", vk::to_string(presentResult)));
         }
 
         frame++;
@@ -241,6 +250,10 @@ public:
 
 protected:
     void resize(int width, int height) override {
+        if(width == 0 || height == 0) {
+            glfwGetFramebufferSize(getWindow(), &width, &height);
+            glfwWaitEvents();
+        }
         swapchain->recreate(width, height);
     }
 

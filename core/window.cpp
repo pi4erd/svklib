@@ -18,7 +18,7 @@
 Window::Window(std::string title, const std::vector<std::tuple<int, int>> &hints) : title(title)
 {
     if(!glfwInit())
-        throw std::runtime_error("Failed to initialize GLFW!");
+        THROW(runtime_error, "Failed to initialize GLFW!");
 
     LOG_DEBUG("Initialized GLFW.");
 
@@ -34,7 +34,7 @@ Window::Window(std::string title, const std::vector<std::tuple<int, int>> &hints
     window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
 
     if(!window)
-        throw std::runtime_error("Failed to create window!");
+        THROW(runtime_error, "Failed to create window!");
 
     LOG_DEBUG("Created window.");
 
@@ -150,10 +150,9 @@ void Window::initVulkan(std::vector<const char*> requestedExtensions, bool porta
     );
 
     if(surfaceCreateResult != vk::Result::eSuccess) {
-        throw std::runtime_error(fmt::format(
-            "Failed to create window surface! Error code: {}",
+        THROW(runtime_error, "Failed to create window surface! Error code: {}",
             vk::to_string(surfaceCreateResult)
-        ));
+        );
     }
 
     LOG_DEBUG("Created VkSurfaceKHR.");

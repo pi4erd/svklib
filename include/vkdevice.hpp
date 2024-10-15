@@ -44,11 +44,11 @@ struct QueueFamilyIndices {
         }
 
         if(!graphicsFamily.has_value()) {
-            throw std::runtime_error("Failed to find graphics queue family!");
+            THROW(runtime_error, "Failed to find graphics queue family!");
         }
 
         if(!presentFamily.has_value()) {
-            throw std::runtime_error("Failed to find present queue family!");
+            THROW(runtime_error, "Failed to find present queue family!");
         }
 
         graphics = *graphicsFamily;
@@ -91,7 +91,7 @@ public:
         }
 
         if(chosenDevice == nullptr) {
-            throw std::runtime_error("Failed to find device with requested Vulkan features!");
+            THROW(runtime_error, "Failed to find device with requested Vulkan features!");
         }
 
         v_physical_device = *chosenDevice;
@@ -140,6 +140,10 @@ public:
     }
 
     vk::Device operator*() {
+        return v_device;
+    }
+
+    vk::Device operator->() {
         return v_device;
     }
 

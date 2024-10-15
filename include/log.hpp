@@ -22,6 +22,8 @@
     fmt::println("\x1b[38;5;196m>>>>\tERROR:\t\x1b[0m{}", fmt::format(__VA_ARGS__)); \
 }
 
+#define THROW(ERROR, ...) throw std:: ERROR (fmt::format(__VA_ARGS__))
+
 namespace logging {
     // TODO: Implement instance-based logging sometime in the future
     class Logging {

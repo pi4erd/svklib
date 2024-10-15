@@ -108,6 +108,8 @@ void Swapchain::cleanupSwapchain() {
 
 
 void Swapchain::recreate(int windowWidth, int windowHeight) {
+    (*device).waitIdle();
+
     auto supportDetails = querySupportDetails(v_surface);
     bool recreateFramebuffers = framebuffers.size() != 0;
 

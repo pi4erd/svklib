@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_structs.hpp>
+#include <vulkan/vulkan_to_string.hpp>
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
@@ -56,8 +57,8 @@ public:
         auto result = device.v_device.createGraphicsPipeline(nullptr, pipeline_info, nullptr, v_dispatcher);
 
         if(result.result != vk::Result::eSuccess && result.result != vk::Result::ePipelineCompileRequiredEXT) {
-            throw std::runtime_error(
-                fmt::format("Failed to create graphics pipeline: code {}.", (uint32_t)result.result)
+            THROW(runtime_error, "Failed to create graphics pipeline: {}",
+                vk::to_string(result.result)
             );
         }
 
