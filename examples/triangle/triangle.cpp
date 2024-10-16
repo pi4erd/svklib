@@ -205,11 +205,15 @@ public:
 
         auto acquireResult = swapchain->acquireImage(*image_ready, nullptr);
         switch((uint32_t)acquireResult.result) {
+            case (uint32_t)vk::Result::eSuboptimalKHR:
             case (uint32_t)vk::Result::eSuccess:
             device->v_device.resetFences(in_flight_fence->v_fence, v_dispatcher);
             break;
-            case (uint32_t)vk::Result::eSuboptimalKHR:
             case (uint32_t)vk::Result::eErrorOutOfDateKHR:
+            if(width == 0 || height == 0) {
+                glfwGetFramebufferSize(getWindow(), &width, &height);
+                glfwWaitEvents();
+            }
             swapchain->recreate(width, height);
             return;
             default:
@@ -241,7 +245,15 @@ public:
         
         // LOG_DEBUG("Presenting frame {}", frame);
         auto presentResult = device->v_present_queue.presentKHR(presentInfo, v_dispatcher);
-        if(presentResult != vk::Result::eSuccess) {
+
+        switch((uint64_t)presentResult) {
+            case (uint64_t)vk::Result::eSuccess:
+            break;
+            case (uint64_t)vk::Result::eSuboptimalKHR:
+            case (uint64_t)vk::Result::eErrorOutOfDateKHR:
+            swapchain->recreate(width, height);
+            break;
+            default:
             THROW(runtime_error, fmt::format("Failed to present: {}", vk::to_string(presentResult)));
         }
 
@@ -254,7 +266,17 @@ protected:
             glfwGetFramebufferSize(getWindow(), &width, &height);
             glfwWaitEvents();
         }
-        swapchain->recreate(width, height);
+
+        // NOTE: This is a small hack to mitigate issue that I'm experiencing
+        // Basically, when resizing window too much, it causes it to lag (at least on Wayland)
+        // By skipping 10 frames between resizing, it helps mitigate the lag of
+        // continuous swapchain recreation, and it should still be fine
+        // since I check outdated/suboptimal image in loop.
+        // This should not be a thing though.
+        if(frame % 10 == 0) {
+            swapchain->recreate(width, height);
+            frame++;
+        }
     }
 
 private:
@@ -275,7 +297,7 @@ private:
 };
 
 int main(void) {
-    logging::set_log_level(LOGLEVEL_DEBUG);
+    logging::set_environmental_log_level(LOGLEVEL_DEBUG);
 
     App *app;
     try {
