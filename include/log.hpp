@@ -31,7 +31,9 @@ namespace logging {
         static int LOG_LEVEL;
     };
 
-    void set_log_level(int log_level);
+    const int get_environmental_log_level() noexcept;
+    void set_environmental_log_level(int _default=LOGLEVEL_NONE) noexcept;
+    void set_log_level(int log_level) noexcept;
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
