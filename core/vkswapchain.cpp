@@ -29,8 +29,19 @@ Swapchain::Swapchain(
     vk::SurfaceFormatKHR chosenFormat;
     vk::PresentModeKHR chosenPresentMode;
 
-    // TODO: Implement format matching
-    chosenFormat = supportDetails.formats[0];
+    auto format = std::find_if(
+        supportDetails.formats.begin(),
+        supportDetails.formats.end(),
+        [preferredSettings](vk::SurfaceFormatKHR format) {
+            return format == preferredSettings.preferredFormat;
+        }
+    );
+
+    if(format == supportDetails.formats.end()) {
+        chosenFormat = supportDetails.formats[0];
+    } else {
+        chosenFormat = *format;
+    }
 
     // if(formatsUnique.find(preferredSettings.preferredFormat) != formatsUnique.end()) {
     //     chosenFormat = preferredSettings.preferredFormat;
