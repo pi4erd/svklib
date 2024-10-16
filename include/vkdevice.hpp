@@ -143,8 +143,8 @@ public:
         return v_device;
     }
 
-    vk::Device operator->() {
-        return v_device;
+    vk::Device *operator->() {
+        return &v_device;
     }
 
 public:
